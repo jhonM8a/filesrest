@@ -1,25 +1,22 @@
-# Usa una imagen base de OpenJDK con soporte para Java 21
-FROM eclipse-temurin:21-jdk-alpine as builder
+# Usa una imagen base con Maven y JDK
+FROM maven:3.9.5-eclipse-temurin-21 as builder
 
 # Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el archivo de configuración de Maven
+# Copia el archivo POM y las dependencias necesarias
 COPY pom.xml .
 
-# Copia los archivos de dependencias necesarios para resolverlas
-RUN mkdir -p src/main && touch src/main/java/placeholder.java
-
-# Descarga las dependencias necesarias
-RUN ./mvnw dependency:go-offline -B
+# Descarga las dependencias
+RUN mvn dependency:go-offline -B
 
 # Copia el código fuente del proyecto
 COPY src ./src
 
-# Compila el proyecto y genera el .jar ejecutable
-RUN ./mvnw clean package -DskipTests
+# Construye el .jar ejecutable
+RUN mvn clean package -DskipTests
 
-# Crea una nueva etapa para un entorno más pequeño
+# Usa una imagen JRE más ligera para la ejecución
 FROM eclipse-temurin:21-jre-alpine
 
 # Establece el directorio de trabajo
