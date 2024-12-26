@@ -1,32 +1,29 @@
-# Usa una imagen base con Maven y JDK
+# Usa Maven para compilar
 FROM maven:3.9.5-eclipse-temurin-21 as builder
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el archivo POM y las dependencias necesarias
+# Copia el archivo POM y las dependencias
 COPY pom.xml .
-
-# Descarga las dependencias
 RUN mvn dependency:go-offline -B
 
-# Copia el código fuente del proyecto
+# Copia el código fuente
 COPY src ./src
 
-# Construye el .jar ejecutable
+# Compila el proyecto
 RUN mvn clean package -DskipTests
 
-# Usa una imagen JRE más ligera para la ejecución
+# Usa una imagen JRE más ligera
 FROM eclipse-temurin:21-jre-alpine
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el .jar del builder
+# Copia el .jar y el keystore al contenedor
 COPY --from=builder /app/target/*.jar app.jar
+COPY keystore.p12 keystore.p12
 
-# Expone el puerto que usará la aplicación
-EXPOSE 8080
+# Exponer el puerto HTTPS
+EXPOSE 8443
 
 # Comando para ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "app.jar"]
